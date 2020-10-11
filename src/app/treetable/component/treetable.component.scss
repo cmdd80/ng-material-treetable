@@ -32,3 +32,10 @@ td[class*=' mat-column']{
 td div {
   word-break: break-all;
 }
+
+.expand-all {
+  position: relative;
+  left: -15px;
+  cursor: pointer;
+  padding: 10px;
+}

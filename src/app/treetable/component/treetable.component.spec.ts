@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed} from '@angular/core/testing';
 import { TreetableComponent } from './treetable.component';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
@@ -36,7 +36,8 @@ describe('TreetableComponent', () => {
   it('should emit an event when a node is clicked', () => {
     const clickedNode = (component as any).treeTable[0];
     component.nodeClicked.subscribe(n => expect(n).toBe(clickedNode));
-    component.onNodeClick(clickedNode);
+    // component.onNodeClick(clickedNode);
+    component.onNodeClick(clickedNode, new Event('click'));
   });
 
 });

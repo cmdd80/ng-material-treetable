@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, ElementRef, EventEmitter } from '@angular/core';
+import { Component, OnInit, Input, Output, ElementRef, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { Node, TreeTableNode, Options, SearchableNode } from '../models';
 import { TreeService } from '../services/tree/tree.service';
 import { MatTableDataSource } from '@angular/material';
@@ -14,7 +14,7 @@ import { Subject } from 'rxjs';
   templateUrl: './treetable.component.html',
   styleUrls: ['./treetable.component.scss']
 })
-export class TreetableComponent<T> implements OnInit {
+export class TreetableComponent<T> implements OnInit, OnChanges  {
   @Input() @Required tree: Node<T> | Node<T>[];
   @Input() options: Options<T> = {};
   @Output() nodeClicked: Subject<TreeTableNode<T>> = new Subject();
@@ -34,6 +34,17 @@ export class TreetableComponent<T> implements OnInit {
     if (tagName === 'ng-treetable') {
       console.warn(`DEPRECATION WARNING: \n The 'ng-treetable' selector is being deprecated. Please use the new 'treetable' selector`);
     }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+        if (changes.tree.isFirstChange()) {
+      return;
+    }
+    this.tree = Array.isArray(this.tree) ? this.tree : [this.tree];
+    this.searchableTree = this.tree.map(t => this.converterService.toSearchableTree(t));
+    const treeTableTree = this.searchableTree.map(st => this.converterService.toTreeTableTree(st));
+    this.treeTable = flatMap(treeTableTree, this.treeService.flatten);
+    this.dataSource = this.generateDataSource();
   }
 
   ngOnInit() {
@@ -70,7 +81,8 @@ export class TreetableComponent<T> implements OnInit {
 		return `mat-elevation-z${this.options.elevation}`;
 	}
 
-  onNodeClick(clickedNode: TreeTableNode<T>): void {
+  onNodeClick(clickedNode: TreeTableNode<T>, $event: Event): void {
+    $event.stopPropagation();
     clickedNode.isExpanded = !clickedNode.isExpanded;
     this.treeTable.forEach(el => {
       el.isVisible = this.searchableTree.every(st => {
@@ -83,13 +95,35 @@ export class TreetableComponent<T> implements OnInit {
     this.nodeClicked.next(clickedNode);
   }
 
-  onRowClicked(node : Node<T>): void {
-    this.rowClicked.emit(node.value);
+  allElementsVisible(): boolean {
+    return this.treeTable.slice(1).every(item => item.isVisible);
   }
 
   // Overrides default options with those specified by the user
   parseOptions(defaultOpts: Options<T>): Options<T> {
     return defaults(this.options, defaultOpts);
+  }
+
+  //CMDD
+  onRowClicked(node : Node<T>): void {
+    this.rowClicked.emit(node.value);
+  }
+
+  toggleAll() {
+    if (!this.allElementsVisible()) {
+      this.treeTable.forEach(item => {
+        item.isExpanded = true;
+        item.isVisible = true;
+      });
+    } else {
+      this.treeTable.forEach((item, index) => {
+        item.isExpanded = false;
+        if (item.depth> 0) {
+          item.isVisible = false;
+        }
+      });
+    }
+    this.dataSource = this.generateDataSource();
   }
 
 }
