@@ -1,20 +1,29 @@
-import { Component, OnInit, Input, Output, ElementRef, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
-import { Node, TreeTableNode, Options, SearchableNode } from '../models';
-import { TreeService } from '../services/tree/tree.service';
-import { MatTableDataSource } from '@angular/material';
-import { ValidatorService } from '../services/validator/validator.service';
-import { ConverterService } from '../services/converter/converter.service';
-import { defaultOptions } from '../default.options';
-import { flatMap, defaults } from 'lodash-es';
-import { Required } from '../decorators/required.decorator';
-import { Subject } from 'rxjs';
+import {
+  Component,
+  OnInit,
+  Input,
+  Output,
+  ElementRef,
+  EventEmitter,
+  OnChanges,
+  SimpleChanges,
+} from "@angular/core";
+import { Node, TreeTableNode, Options, SearchableNode } from "../models";
+import { TreeService } from "../services/tree/tree.service";
+import { MatTableDataSource } from "@angular/material";
+import { ValidatorService } from "../services/validator/validator.service";
+import { ConverterService } from "../services/converter/converter.service";
+import { defaultOptions } from "../default.options";
+import { flatMap, defaults } from "lodash-es";
+import { Required } from "../decorators/required.decorator";
+import { Subject } from "rxjs";
 
 @Component({
-  selector: 'ng-treetable, treetable', // 'ng-treetable' is currently being deprecated
-  templateUrl: './treetable.component.html',
-  styleUrls: ['./treetable.component.scss']
+  selector: "ng-treetable, treetable", // 'ng-treetable' is currently being deprecated
+  templateUrl: "./treetable.component.html",
+  styleUrls: ["./treetable.component.scss"],
 })
-export class TreetableComponent<T> implements OnInit, OnChanges  {
+export class TreetableComponent<T> implements OnInit, OnChanges {
   @Input() @Required tree: Node<T> | Node<T>[];
   @Input() options: Options<T> = {};
   @Output() nodeClicked: Subject<TreeTableNode<T>> = new Subject();
@@ -31,18 +40,24 @@ export class TreetableComponent<T> implements OnInit, OnChanges  {
     elem: ElementRef
   ) {
     const tagName = elem.nativeElement.tagName.toLowerCase();
-    if (tagName === 'ng-treetable') {
-      console.warn(`DEPRECATION WARNING: \n The 'ng-treetable' selector is being deprecated. Please use the new 'treetable' selector`);
+    if (tagName === "ng-treetable") {
+      console.warn(
+        `DEPRECATION WARNING: \n The 'ng-treetable' selector is being deprecated. Please use the new 'treetable' selector`
+      );
     }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-        if (changes.tree.isFirstChange()) {
+    if (changes.tree.isFirstChange()) {
       return;
     }
     this.tree = Array.isArray(this.tree) ? this.tree : [this.tree];
-    this.searchableTree = this.tree.map(t => this.converterService.toSearchableTree(t));
-    const treeTableTree = this.searchableTree.map(st => this.converterService.toTreeTableTree(st));
+    this.searchableTree = this.tree.map((t) =>
+      this.converterService.toSearchableTree(t)
+    );
+    const treeTableTree = this.searchableTree.map((st) =>
+      this.converterService.toTreeTableTree(st)
+    );
     this.treeTable = flatMap(treeTableTree, this.treeService.flatten);
     this.dataSource = this.generateDataSource();
   }
@@ -50,45 +65,61 @@ export class TreetableComponent<T> implements OnInit, OnChanges  {
   ngOnInit() {
     this.tree = Array.isArray(this.tree) ? this.tree : [this.tree];
     this.options = this.parseOptions(defaultOptions);
-    const customOrderValidator = this.validatorService.validateCustomOrder(this.tree[0], this.options.customColumnOrder);
+    const customOrderValidator = this.validatorService.validateCustomOrder(
+      this.tree[0],
+      this.options.customColumnOrder
+    );
     if (this.options.customColumnOrder && !customOrderValidator.valid) {
       throw new Error(`
-        Properties ${customOrderValidator.xor.map(x => `'${x}'`).join(', ')} incorrect or missing in customColumnOrder`
-      );
+        Properties ${customOrderValidator.xor
+          .map((x) => `'${x}'`)
+          .join(", ")} incorrect or missing in customColumnOrder`);
     }
     this.displayedColumns = this.options.customColumnOrder
       ? this.options.customColumnOrder
       : this.extractNodeProps(this.tree[0]);
-    this.searchableTree = this.tree.map(t => this.converterService.toSearchableTree(t));
-    const treeTableTree = this.searchableTree.map(st => this.converterService.toTreeTableTree(st));
+    this.searchableTree = this.tree.map((t) =>
+      this.converterService.toSearchableTree(t)
+    );
+    const treeTableTree = this.searchableTree.map((st) =>
+      this.converterService.toTreeTableTree(st)
+    );
     this.treeTable = flatMap(treeTableTree, this.treeService.flatten);
+
+    if (!this.options.expanded){
+      this.collapseAll();
+    }
+
     this.dataSource = this.generateDataSource();
   }
 
   extractNodeProps(tree: Node<T> & { value: { [k: string]: any } }): string[] {
-    return Object.keys(tree.value).filter(x => typeof tree.value[x] !== 'object');
+    return Object.keys(tree.value).filter(
+      (x) => typeof tree.value[x] !== "object"
+    );
   }
 
   generateDataSource(): MatTableDataSource<TreeTableNode<T>> {
-    return new MatTableDataSource(this.treeTable.filter(x => x.isVisible));
+    return new MatTableDataSource(this.treeTable.filter((x) => x.isVisible));
   }
 
   formatIndentation(node: TreeTableNode<T>, step: number = 5): string {
-    return '&nbsp;'.repeat(node.depth * step);
+    return "&nbsp;".repeat(node.depth * step);
   }
 
-	formatElevation(): string {
-		return `mat-elevation-z${this.options.elevation}`;
-	}
+  formatElevation(): string {
+    return `mat-elevation-z${this.options.elevation}`;
+  }
 
   onNodeClick(clickedNode: TreeTableNode<T>, $event: Event): void {
     $event.stopPropagation();
     clickedNode.isExpanded = !clickedNode.isExpanded;
-    this.treeTable.forEach(el => {
-      el.isVisible = this.searchableTree.every(st => {
-        return this.treeService.searchById(st, el.id).
-          fold([], n => n.pathToRoot)
-          .every(p => this.treeTable.find(x => x.id === p.id).isExpanded);
+    this.treeTable.forEach((el) => {
+      el.isVisible = this.searchableTree.every((st) => {
+        return this.treeService
+          .searchById(st, el.id)
+          .fold([], (n) => n.pathToRoot)
+          .every((p) => this.treeTable.find((x) => x.id === p.id).isExpanded);
       });
     });
     this.dataSource = this.generateDataSource();
@@ -96,7 +127,7 @@ export class TreetableComponent<T> implements OnInit, OnChanges  {
   }
 
   allElementsVisible(): boolean {
-    return this.treeTable.slice(1).every(item => item.isVisible);
+    return this.treeTable.slice(1).every((item) => item.isVisible);
   }
 
   // Overrides default options with those specified by the user
@@ -105,25 +136,32 @@ export class TreetableComponent<T> implements OnInit, OnChanges  {
   }
 
   //CMDD
-  onRowClicked(node : Node<T>): void {
+  onRowClicked(node: Node<T>): void {
     this.rowClicked.emit(node.value);
   }
 
   toggleAll() {
     if (!this.allElementsVisible()) {
-      this.treeTable.forEach(item => {
-        item.isExpanded = true;
-        item.isVisible = true;
-      });
+      this.expandAll();
     } else {
-      this.treeTable.forEach((item, index) => {
-        item.isExpanded = false;
-        if (item.depth> 0) {
-          item.isVisible = false;
-        }
-      });
+      this.collapseAll();
     }
     this.dataSource = this.generateDataSource();
   }
 
+  expandAll() {
+    this.treeTable.forEach((item) => {
+      item.isExpanded = true;
+      item.isVisible = true;
+    });
+  }
+
+  collapseAll() {
+    this.treeTable.forEach((item, index) => {
+      item.isExpanded = false;
+      if (item.depth > 0) {
+        item.isVisible = false;
+      }
+    });
+  }
 }

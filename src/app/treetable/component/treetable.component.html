@@ -12,7 +12,6 @@
         <div *ngIf="isFirst">
           <div class="value-cell">
             <div [innerHTML]="formatIndentation(element)"></div>
-            <!-- <mat-icon [ngStyle]="{'visibility': element.children.length ? 'visible' : 'hidden'}" (click)="onNodeClick(element)"> -->
               <mat-icon [ngStyle]="{'visibility': element.children.length ? 'visible' : 'hidden'}"
                             (click)="onNodeClick(element, $event)">
               {{element.isExpanded ? 'keyboard_arrow_down' : 'keyboard_arrow_right'}}
