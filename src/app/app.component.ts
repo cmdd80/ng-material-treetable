@@ -12,4 +12,9 @@ import { Folder, Task } from './treetable/mocks/models';
 export class AppComponent {
   singleRootTree: Node<Folder> = mockTree;
   arrayOfNodesTree: Node<Task>[] = mockTreeAsArrayOfNodes;
+
+  onRowClicked(element: any): void{
+    console.log({element});
+  }
+
 }

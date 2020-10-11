@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, ElementRef } from '@angular/core';
+import { Component, OnInit, Input, Output, ElementRef, EventEmitter } from '@angular/core';
 import { Node, TreeTableNode, Options, SearchableNode } from '../models';
 import { TreeService } from '../services/tree/tree.service';
 import { MatTableDataSource } from '@angular/material';
@@ -18,6 +18,7 @@ export class TreetableComponent<T> implements OnInit {
   @Input() @Required tree: Node<T> | Node<T>[];
   @Input() options: Options<T> = {};
   @Output() nodeClicked: Subject<TreeTableNode<T>> = new Subject();
+  @Output() rowClicked = new EventEmitter();
   private searchableTree: SearchableNode<T>[];
   private treeTable: TreeTableNode<T>[];
   displayedColumns: string[];
@@ -80,6 +81,10 @@ export class TreetableComponent<T> implements OnInit {
     });
     this.dataSource = this.generateDataSource();
     this.nodeClicked.next(clickedNode);
+  }
+
+  onRowClicked(node : Node<T>): void {
+    this.rowClicked.emit(node.value);
   }
 
   // Overrides default options with those specified by the user
