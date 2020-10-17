@@ -19,11 +19,15 @@ export interface NodeInTree<T> extends SearchableNode<T> {
   pathToRoot: SearchableNode<T>[];
 }
 
+export interface CustomColumnOrder<T> {
+  key: string & keyof T, title: string
+}
+
 export interface Options<T> {
   verticalSeparator?: boolean;
   capitalisedHeader?: boolean;
   highlightRowOnHover?: boolean;
-  customColumnOrder?: Array<keyof T> & string[];
+  customColumnOrder?: CustomColumnOrder<T>[];
   elevation?: number;
   expanded?: boolean;
 }

@@ -5,4 +5,5 @@ export const defaultOptions: Options<any> = {
   highlightRowOnHover: true,
   elevation: 5,
   expanded: false,
+  customColumnOrder: []
 };

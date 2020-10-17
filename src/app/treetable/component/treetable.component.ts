@@ -6,10 +6,9 @@ import {
   ElementRef,
   EventEmitter,
   OnChanges,
-  SimpleChanges,
-  ViewEncapsulation,
+  SimpleChanges
 } from "@angular/core";
-import { Node, TreeTableNode, Options, SearchableNode } from "../models";
+import { Node, TreeTableNode, Options, SearchableNode, CustomColumnOrder } from "../models";
 import { TreeService } from "../services/tree/tree.service";
 import { MatTableDataSource } from "@angular/material";
 import { ValidatorService } from "../services/validator/validator.service";
@@ -22,7 +21,7 @@ import { Subject } from "rxjs";
 @Component({
   selector: "ng-treetable, treetable", // 'ng-treetable' is currently being deprecated
   templateUrl: "./treetable.component.html",
-  styleUrls: ["./treetable.component.scss"]
+  styleUrls: ["./treetable.component.scss"],
 })
 export class TreetableComponent<T> implements OnInit, OnChanges {
   @Input() @Required tree: Node<T> | Node<T>[];
@@ -32,7 +31,8 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
 
   private searchableTree: SearchableNode<T>[];
   private treeTable: TreeTableNode<T>[];
-  displayedColumns: string[];
+  displayedColumns: CustomColumnOrder<T>[];
+  displayedColumnsKeys: string[];
   dataSource: MatTableDataSource<TreeTableNode<T>>;
 
   constructor(
@@ -68,20 +68,30 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
   ngOnInit() {
     this.tree = Array.isArray(this.tree) ? this.tree : [this.tree];
     this.options = this.parseOptions(defaultOptions);
+    
     const customOrderValidator = this.validatorService.validateCustomOrder(
       this.tree[0],
-      this.options.customColumnOrder
+      this.options.customColumnOrder.map((column) => column.key) 
     );
-    
-    if (this.options.customColumnOrder && !customOrderValidator.valid) {
+
+    if (this.options.customColumnOrder.length && !customOrderValidator.valid) {
       throw new Error(`
         Properties ${customOrderValidator.xor
           .map((x) => `'${x}'`)
           .join(", ")} incorrect or missing in customColumnOrder`);
     }
-    this.displayedColumns = this.options.customColumnOrder
-      ? this.options.customColumnOrder
-      : this.extractNodeProps(this.tree[0]);
+
+    if (this.options.customColumnOrder.length){
+      this.displayedColumns = this.options.customColumnOrder;
+      this.displayedColumnsKeys = this.options.customColumnOrder.map((column) => column.key)
+    } else {
+      let props = this.extractNodeProps(this.tree[0]);
+      this.displayedColumns = props.map(prop => ({
+        key: prop,
+        title: prop
+      })) as CustomColumnOrder<T>[];
+      this.displayedColumnsKeys = props;
+    }
 
     this.searchableTree = this.tree.map((t) =>
       this.converterService.toSearchableTree(t)
@@ -91,7 +101,7 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
     );
     this.treeTable = flatMap(treeTableTree, this.treeService.flatten);
 
-    if (!this.options.expanded){
+    if (!this.options.expanded) {
       this.collapseAll();
     }
 
@@ -140,7 +150,6 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
     return defaults(this.options, defaultOpts);
   }
 
-  //CMDD
   onRowClicked(node: Node<T>): void {
     this.rowClicked.emit(node.value);
   }

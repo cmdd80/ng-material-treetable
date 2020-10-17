@@ -21,7 +21,8 @@
 </div>
 
 <h2>Tree as Single Root Node</h2>
-<treetable [tree]="singleRootTree" (rowClicked)="onRowClicked($event)"></treetable>
+<treetable [tree]="singleRootTree" (rowClicked)="onRowClicked($event)" [options]="{capitalisedHeader: true}"></treetable>
 
 <h2>Tree as Array of Nodes</h2>
-<treetable [tree]="arrayOfNodesTree" [options]="{expanded: true}"></treetable>
+<treetable [tree]="arrayOfNodesTree" [options]="options"></treetable>
+
