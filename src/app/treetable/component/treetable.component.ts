@@ -7,6 +7,7 @@ import {
   EventEmitter,
   OnChanges,
   SimpleChanges,
+  ViewEncapsulation,
 } from "@angular/core";
 import { Node, TreeTableNode, Options, SearchableNode } from "../models";
 import { TreeService } from "../services/tree/tree.service";
@@ -21,13 +22,14 @@ import { Subject } from "rxjs";
 @Component({
   selector: "ng-treetable, treetable", // 'ng-treetable' is currently being deprecated
   templateUrl: "./treetable.component.html",
-  styleUrls: ["./treetable.component.scss"],
+  styleUrls: ["./treetable.component.scss"]
 })
 export class TreetableComponent<T> implements OnInit, OnChanges {
   @Input() @Required tree: Node<T> | Node<T>[];
   @Input() options: Options<T> = {};
   @Output() nodeClicked: Subject<TreeTableNode<T>> = new Subject();
   @Output() rowClicked = new EventEmitter();
+
   private searchableTree: SearchableNode<T>[];
   private treeTable: TreeTableNode<T>[];
   displayedColumns: string[];
@@ -52,6 +54,7 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
       return;
     }
     this.tree = Array.isArray(this.tree) ? this.tree : [this.tree];
+
     this.searchableTree = this.tree.map((t) =>
       this.converterService.toSearchableTree(t)
     );
@@ -69,6 +72,7 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
       this.tree[0],
       this.options.customColumnOrder
     );
+    
     if (this.options.customColumnOrder && !customOrderValidator.valid) {
       throw new Error(`
         Properties ${customOrderValidator.xor
@@ -78,6 +82,7 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
     this.displayedColumns = this.options.customColumnOrder
       ? this.options.customColumnOrder
       : this.extractNodeProps(this.tree[0]);
+
     this.searchableTree = this.tree.map((t) =>
       this.converterService.toSearchableTree(t)
     );

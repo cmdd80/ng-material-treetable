@@ -7,12 +7,18 @@ import { isEmpty, xor } from 'lodash-es';
 })
 export class ValidatorService {
 
-  validateCustomOrder<T, K extends Node<T>>(node: K, customColumnOrder: Array<keyof T> & string[]): { valid: boolean, xor: string[] } {
+  validateCustomOrder<T>(node:Node<T>, customColumnOrder: Array<keyof T> & string[]): { valid: boolean, xor: string[] } {
     const xorN = xor(Object.keys(node.value), customColumnOrder);
     return {
       valid: isEmpty(xorN),
       xor: xorN
     };
   }
-
+  // validateCustomOrder<T, K extends Node<T>>(node: K, customColumnOrder: Array<keyof T> & string[]): { valid: boolean, xor: string[] } {
+  //   const xorN = xor(Object.keys(node.value), customColumnOrder);
+  //   return {
+  //     valid: isEmpty(xorN),
+  //     xor: xorN
+  //   };
+  // }
 }
