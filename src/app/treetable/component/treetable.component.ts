@@ -6,9 +6,16 @@ import {
   ElementRef,
   EventEmitter,
   OnChanges,
-  SimpleChanges
+  SimpleChanges,
+  ChangeDetectorRef,
 } from "@angular/core";
-import { Node, TreeTableNode, Options, SearchableNode, CustomColumnOrder } from "../models";
+import {
+  Node,
+  TreeTableNode,
+  Options,
+  SearchableNode,
+  CustomColumnOrder,
+} from "../models";
 import { TreeService } from "../services/tree/tree.service";
 import { MatTableDataSource } from "@angular/material";
 import { ValidatorService } from "../services/validator/validator.service";
@@ -17,6 +24,7 @@ import { defaultOptions } from "../default.options";
 import { flatMap, defaults } from "lodash-es";
 import { Required } from "../decorators/required.decorator";
 import { Subject } from "rxjs";
+import { fromCompare } from "fp-ts/lib/Ord";
 
 @Component({
   selector: "ng-treetable, treetable", // 'ng-treetable' is currently being deprecated
@@ -25,10 +33,12 @@ import { Subject } from "rxjs";
 })
 export class TreetableComponent<T> implements OnInit, OnChanges {
   @Input() @Required tree: Node<T> | Node<T>[];
+
   @Input() options: Options<T> = {};
   @Output() nodeClicked: Subject<TreeTableNode<T>> = new Subject();
   @Output() rowClicked = new EventEmitter();
 
+  private originalTree: Node<T> | Node<T>[];
   private searchableTree: SearchableNode<T>[];
   private treeTable: TreeTableNode<T>[];
   displayedColumns: CustomColumnOrder<T>[];
@@ -39,6 +49,7 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
     private treeService: TreeService,
     private validatorService: ValidatorService,
     private converterService: ConverterService,
+    private cd: ChangeDetectorRef,
     elem: ElementRef
   ) {
     const tagName = elem.nativeElement.tagName.toLowerCase();
@@ -50,9 +61,15 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    console.log("on change");
     if (changes.tree.isFirstChange()) {
       return;
     }
+
+    this._onChange();
+  }
+
+  _onChange(): void {
     this.tree = Array.isArray(this.tree) ? this.tree : [this.tree];
 
     this.searchableTree = this.tree.map((t) =>
@@ -67,11 +84,12 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
 
   ngOnInit() {
     this.tree = Array.isArray(this.tree) ? this.tree : [this.tree];
+    this.originalTree = JSON.parse(JSON.stringify(this.tree)); //copia per VALORE
     this.options = this.parseOptions(defaultOptions);
-    
+
     const customOrderValidator = this.validatorService.validateCustomOrder(
       this.tree[0],
-      this.options.customColumnOrder.map((column) => column.key) 
+      this.options.customColumnOrder.map((column) => column.key)
     );
 
     if (this.options.customColumnOrder.length && !customOrderValidator.valid) {
@@ -81,14 +99,16 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
           .join(", ")} incorrect or missing in customColumnOrder`);
     }
 
-    if (this.options.customColumnOrder.length){
+    if (this.options.customColumnOrder.length) {
       this.displayedColumns = this.options.customColumnOrder;
-      this.displayedColumnsKeys = this.options.customColumnOrder.map((column) => column.key)
+      this.displayedColumnsKeys = this.options.customColumnOrder.map(
+        (column) => column.key
+      );
     } else {
       let props = this.extractNodeProps(this.tree[0]);
-      this.displayedColumns = props.map(prop => ({
+      this.displayedColumns = props.map((prop) => ({
         key: prop,
-        title: prop
+        title: prop,
       })) as CustomColumnOrder<T>[];
       this.displayedColumnsKeys = props;
     }
@@ -178,4 +198,71 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
       }
     });
   }
+
+  public filterData(
+    query: string,
+    key: string,
+    fCompare?: (node: Node<T>, key: string, query: string) => boolean
+  ) {
+    if (query === "") {
+      this.tree = this.originalTree;
+    } else {
+      let result = this.search(this.originalTree, query, key, fCompare) || [];
+      console.log(result);
+      this.tree = result;
+    }
+    this._onChange();
+    this.expandAll();
+  }
+
+  search(
+    nodes: any,
+    query: string,
+    key: string,
+    fCompare?: (node: Node<T> & { value: { [k: string]: any } }, key: string, query: string) => boolean
+  ): Node<T> | Node<T>[] {
+    var result = [];
+    for (let node of nodes) {
+      //console.log(node.value[key]);
+      fCompare = fCompare
+        ? fCompare
+        : (node, key, query) => node.value[key] == query;
+      //if (node.value[key] == query) {
+      if (fCompare(node, key, query)) {
+        //console.log("Aggiungo nodo", node.value[key]);
+        result.push(node);
+      } else {
+        if (node.children && node.children.length) {
+          let leaves = this.search(node.children, query, key, fCompare);
+          leaves = Array.isArray(leaves) ? leaves : [leaves];
+          if (leaves && leaves.length) {
+            // console.log("Aggiungo children", node.value[key], leaves);
+            result.push(Object.assign({}, node, { children: leaves }));
+          }
+        }
+      }
+    }
+    return result;
+  }
+  
+  // search(nodes: any, value: any, key: string, fCompare:any): any {
+  //   var result = [];
+  //   for (let node of nodes) {
+  //     console.log(node.value[key]);
+  //     //if (node.value[key] == value) {
+  //       if (fCompare(node)){
+  //       // console.log("Aggiungo nodo", node.value[key]);
+  //       result.push(node);
+  //     } else {
+  //       if (node.children && node.children.length) {
+  //         let leaves = this.search(node.children, value, key, fCompare);
+  //         if (leaves && leaves.length) {
+  //           // console.log("Aggiungo children", node.value[key], leaves);
+  //           result.push(Object.assign({}, node, { children: leaves }));
+  //         }
+  //       }
+  //     }
+  //   }
+  //   return result;
+  // }
 }

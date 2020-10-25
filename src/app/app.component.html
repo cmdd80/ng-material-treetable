@@ -2,7 +2,7 @@
   <div>
     <h1>Angular Material TreeTable Component</h1>
   </div>
-  <div>
+  <!-- <div>
     <iframe
       src="https://ghbtns.com/github-btn.html?user=mlrv&repo=ng-material-treetable&type=star&count=true&size=large"
     frameborder="0"
@@ -17,11 +17,22 @@
     width="160px"
     height="30px">
   </iframe>
-  </div>
+  </div> -->
 </div>
 
-<h2>Tree as Single Root Node</h2>
-<treetable [tree]="singleRootTree" (rowClicked)="onRowClicked($event)" [options]="{capitalisedHeader: true}"></treetable>
+<!-- <mat-form-field class="example-form-field">
+  <mat-label>Ricerca</mat-label>
+  <input matInput type="text" [(ngModel)]="query" (change)="onSearch()">
+  <button mat-button *ngIf="query" matSuffix mat-icon-button aria-label="Clear" (click)="query=''">
+    <mat-icon>close</mat-icon>
+  </button>
+</mat-form-field> -->
+<div>
+  <label>Ricerca</label>
+  <input type="text" [(ngModel)]="query" (change)="onSearch()">
+</div>
+<!-- <h2>Tree as Single Root Node</h2>
+<treetable [tree]="singleRootTree" (rowClicked)="onRowClicked($event)" [options]="{capitalisedHeader: true}"></treetable> -->
 
 <h2>Tree as Array of Nodes</h2>
 <treetable [tree]="arrayOfNodesTree" [options]="options"></treetable>
