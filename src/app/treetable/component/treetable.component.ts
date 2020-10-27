@@ -69,19 +69,6 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
     this._onChange();
   }
 
-  _onChange(): void {
-    this.tree = Array.isArray(this.tree) ? this.tree : [this.tree];
-
-    this.searchableTree = this.tree.map((t) =>
-      this.converterService.toSearchableTree(t)
-    );
-    const treeTableTree = this.searchableTree.map((st) =>
-      this.converterService.toTreeTableTree(st)
-    );
-    this.treeTable = flatMap(treeTableTree, this.treeService.flatten);
-    this.dataSource = this.generateDataSource();
-  }
-
   ngOnInit() {
     this.tree = Array.isArray(this.tree) ? this.tree : [this.tree];
     this.originalTree = JSON.parse(JSON.stringify(this.tree)); // copia per VALORE
@@ -199,6 +186,19 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
     });
   }
 
+  _onChange(): void {
+    this.tree = Array.isArray(this.tree) ? this.tree : [this.tree];
+
+    this.searchableTree = this.tree.map((t) =>
+      this.converterService.toSearchableTree(t)
+    );
+    const treeTableTree = this.searchableTree.map((st) =>
+      this.converterService.toTreeTableTree(st)
+    );
+    this.treeTable = flatMap(treeTableTree, this.treeService.flatten);
+    this.dataSource = this.generateDataSource();
+  }
+  
   public filterData(
     query: string,
     key: string,
@@ -226,4 +226,6 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
   public prepareData(flatData: T[]): Node<T> | Node<T>[] {
     return this.converterService.arrayToTree(flatData);
   }
+
+
 }
