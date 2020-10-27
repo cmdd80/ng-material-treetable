@@ -8,7 +8,6 @@ const uuidv4 = require('uuid/v4');
   providedIn: 'root'
 })
 export class ConverterService {
-
   constructor(private treeService: TreeService) { }
 
   /**
@@ -37,4 +36,7 @@ export class ConverterService {
     return treeClone;
   }
 
+  arrayToTree<T>(flatData: T[]): Node<T> | Node<T>[] {
+    throw new Error("Method not implemented.");
+  }
 }

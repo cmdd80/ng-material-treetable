@@ -24,7 +24,7 @@ import { defaultOptions } from "../default.options";
 import { flatMap, defaults } from "lodash-es";
 import { Required } from "../decorators/required.decorator";
 import { Subject } from "rxjs";
-import { fromCompare } from "fp-ts/lib/Ord";
+import { FilterService } from "../services/filter/filter.service";
 
 @Component({
   selector: "ng-treetable, treetable", // 'ng-treetable' is currently being deprecated
@@ -49,6 +49,7 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
     private treeService: TreeService,
     private validatorService: ValidatorService,
     private converterService: ConverterService,
+    private filterService: FilterService,
     private cd: ChangeDetectorRef,
     elem: ElementRef
   ) {
@@ -61,7 +62,6 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log("on change");
     if (changes.tree.isFirstChange()) {
       return;
     }
@@ -84,7 +84,7 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
 
   ngOnInit() {
     this.tree = Array.isArray(this.tree) ? this.tree : [this.tree];
-    this.originalTree = JSON.parse(JSON.stringify(this.tree)); //copia per VALORE
+    this.originalTree = JSON.parse(JSON.stringify(this.tree)); // copia per VALORE
     this.options = this.parseOptions(defaultOptions);
 
     const customOrderValidator = this.validatorService.validateCustomOrder(
@@ -105,7 +105,7 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
         (column) => column.key
       );
     } else {
-      let props = this.extractNodeProps(this.tree[0]);
+      const props = this.extractNodeProps(this.tree[0]);
       this.displayedColumns = props.map((prop) => ({
         key: prop,
         title: prop,
@@ -207,62 +207,23 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
     if (query === "") {
       this.tree = this.originalTree;
     } else {
-      let result = this.search(this.originalTree, query, key, fCompare) || [];
-      console.log(result);
-      this.tree = result;
+      if (key === "*") {
+        const result =
+          this.filterService.fuzzySearch(this.originalTree, query) || [];
+        return;
+      } else {
+        const result =
+          this.filterService.search(this.originalTree, query, key, fCompare) ||
+          [];
+        console.log(result);
+        this.tree = result;
+      }
     }
     this._onChange();
     this.expandAll();
   }
 
-  search(
-    nodes: any,
-    query: string,
-    key: string,
-    fCompare?: (node: Node<T> & { value: { [k: string]: any } }, key: string, query: string) => boolean
-  ): Node<T> | Node<T>[] {
-    var result = [];
-    for (let node of nodes) {
-      //console.log(node.value[key]);
-      fCompare = fCompare
-        ? fCompare
-        : (node, key, query) => node.value[key] == query;
-      //if (node.value[key] == query) {
-      if (fCompare(node, key, query)) {
-        //console.log("Aggiungo nodo", node.value[key]);
-        result.push(node);
-      } else {
-        if (node.children && node.children.length) {
-          let leaves = this.search(node.children, query, key, fCompare);
-          leaves = Array.isArray(leaves) ? leaves : [leaves];
-          if (leaves && leaves.length) {
-            // console.log("Aggiungo children", node.value[key], leaves);
-            result.push(Object.assign({}, node, { children: leaves }));
-          }
-        }
-      }
-    }
-    return result;
+  public prepareData(flatData: T[]): Node<T> | Node<T>[] {
+    return this.converterService.arrayToTree(flatData);
   }
-  
-  // search(nodes: any, value: any, key: string, fCompare:any): any {
-  //   var result = [];
-  //   for (let node of nodes) {
-  //     console.log(node.value[key]);
-  //     //if (node.value[key] == value) {
-  //       if (fCompare(node)){
-  //       // console.log("Aggiungo nodo", node.value[key]);
-  //       result.push(node);
-  //     } else {
-  //       if (node.children && node.children.length) {
-  //         let leaves = this.search(node.children, value, key, fCompare);
-  //         if (leaves && leaves.length) {
-  //           // console.log("Aggiungo children", node.value[key], leaves);
-  //           result.push(Object.assign({}, node, { children: leaves }));
-  //         }
-  //       }
-  //     }
-  //   }
-  //   return result;
-  // }
 }
