@@ -20,7 +20,7 @@ export interface NodeInTree<T> extends SearchableNode<T> {
 }
 
 export interface CustomColumnOrder<T> {
-  key: string & keyof T, title: string
+  key: string & keyof T, title: string, visible?: boolean
 }
 
 export interface Options<T> {

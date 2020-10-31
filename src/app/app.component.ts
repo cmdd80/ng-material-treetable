@@ -19,9 +19,9 @@ export class AppComponent {
   options: Options<Task> = {
     expanded: true,
     customColumnOrder: [
-      { key: 'name', title: 'Nome' },
-      { key: 'completed', title: 'Completato' },
-      { key: 'owner', title: 'Proprietario' },
+      { key: 'name', title: 'Nome', visible: true },
+      { key: 'completed', title: 'Completato',  visible: true },
+      { key: 'owner', title: 'Proprietario', visible: true  },
     ],
   };
 

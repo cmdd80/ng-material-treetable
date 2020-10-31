@@ -96,6 +96,7 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
       this.displayedColumns = props.map((prop) => ({
         key: prop,
         title: prop,
+        visible: true
       })) as CustomColumnOrder<T>[];
       this.displayedColumnsKeys = props;
     }
