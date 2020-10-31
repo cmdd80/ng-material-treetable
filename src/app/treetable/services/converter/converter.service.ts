@@ -35,8 +35,4 @@ export class ConverterService {
     });
     return treeClone;
   }
-
-  arrayToTree<T>(flatData: T[]): Node<T> | Node<T>[] {
-    throw new Error("Method not implemented.");
-  }
 }

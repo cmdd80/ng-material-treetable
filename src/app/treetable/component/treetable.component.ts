@@ -198,7 +198,7 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
     this.treeTable = flatMap(treeTableTree, this.treeService.flatten);
     this.dataSource = this.generateDataSource();
   }
-  
+
   public filterData(
     query: string,
     key: string,
@@ -207,25 +207,45 @@ export class TreetableComponent<T> implements OnInit, OnChanges {
     if (query === "") {
       this.tree = this.originalTree;
     } else {
-      if (key === "*") {
-        const result =
-          this.filterService.fuzzySearch(this.originalTree, query) || [];
-        return;
-      } else {
-        const result =
-          this.filterService.search(this.originalTree, query, key, fCompare) ||
-          [];
-        console.log(result);
-        this.tree = result;
-      }
+      const result =
+        this.filterService.search(this.originalTree, query, key, fCompare) ||
+        [];
+      this.tree = result;
     }
     this._onChange();
     this.expandAll();
   }
 
-  public prepareData(flatData: T[]): Node<T> | Node<T>[] {
-    return this.converterService.arrayToTree(flatData);
+  public filterArrayData(options: {
+    query: string;
+    filteredNodes: T[];
+    originalNodes: T[];
+    type?: (string & "DESCENDANTS"| "ANCESTORS" | "ALL");
+  }) : T[] | null {
+    let { query, filteredNodes, originalNodes, type = "ALL" } = options;
+    if (query === "") {
+      this.tree = this.originalTree;
+      this._onChange();
+      this.expandAll();
+      return null;
+    } else {
+      return this.rebuildHierarchy(filteredNodes, originalNodes, type);
+    }
   }
 
-
+  public rebuildHierarchy<T>(
+    filteredNodes: T[],
+    originalNodes: T[],
+    type: (string & "DESCENDANTS") | "ANCESTORS" | "ALL"
+  ): T[] {
+    switch (type) {
+      case "DESCENDANTS":
+        return this.filterService.descendants(filteredNodes, originalNodes);
+      case "ANCESTORS":
+        return this.filterService.ancestors(filteredNodes, originalNodes);
+      case "ALL":
+      default:
+        return this.filterService.all(filteredNodes, originalNodes);
+    }
+  }
 }
